@@ -110,24 +110,23 @@ app.post("/signup", async (req, res) => {
   const hashedPassword = await bcrypt.hash(password, saltRounds);
   await userCollection.insertOne({ name, email, password: hashedPassword });
 
+  // 2. Set Session Data
   req.session.authenticated = true;
   req.session.name = name;
-  res.redirect("/members");
+  req.session.cookie.maxAge = expireTime;
+
+  // 3. THE CRITICAL STEP: Wait for the database to finish saving
+  req.session.save((err) => {
+    if (err) {
+      console.error("Session Save Error:", err);
+      return res.redirect("/signup");
+    }
+    console.log("Session saved successfully to MongoDB");
+    res.redirect("/members"); // Only redirect AFTER the save is confirmed
+  });
 });
 
-// 3. Login Page (GET)
-app.get("/login", (req, res) => {
-  res.send(`
-        <h2>Login</h2>
-        <form action="/login" method="post">
-            <input name="email" type="email" placeholder="Email"><br>
-            <input name="password" type="password" placeholder="Password"><br>
-            <button>Submit</button>
-        </form>
-    `);
-});
-
-// 3. Login (POST)
+// 3. Login Page (POST)
 app.post("/login", async (req, res) => {
   const { email, password } = req.body;
 
@@ -145,9 +144,20 @@ app.post("/login", async (req, res) => {
   const user = await userCollection.findOne({ email: email });
 
   if (user && (await bcrypt.compare(password, user.password))) {
+    // 1. Set the session data
     req.session.authenticated = true;
     req.session.name = user.name;
-    res.redirect("/members");
+    req.session.email = user.email; // Useful to have
+
+    // 2. WAIT for the database to acknowledge the save
+    req.session.save((err) => {
+      if (err) {
+        console.error("Session save error during login:", err);
+        return res.send("Error logging in. Please try again.");
+      }
+      // 3. ONLY redirect once we are sure the session is stored
+      res.redirect("/members");
+    });
   } else {
     res.send(
       "Invalid email/password combination. <br><a href='/login'>Try again</a>",

@@ -162,20 +162,12 @@ app.post("/login", async (req, res) => {
   const user = await userCollection.findOne({ email: email });
 
   if (user && (await bcrypt.compare(password, user.password))) {
-    // 1. Set the session data
     req.session.authenticated = true;
     req.session.name = user.name;
-    req.session.email = user.email; // Useful to have
+    req.session.email = user.email;
 
-    // 2. WAIT for the database to acknowledge the save
-    req.session.save((err) => {
-      if (err) {
-        console.error("Session save error during login:", err);
-        return res.send("Error logging in. Please try again.");
-      }
-      // 3. ONLY redirect once we are sure the session is stored
-      res.redirect("/members");
-    });
+    // No req.session.save() - just redirect immediately
+    res.redirect("/members");
   } else {
     res.send(
       "Invalid email/password combination. <br><a href='/login'>Try again</a>",

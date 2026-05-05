@@ -30,7 +30,8 @@ const mongodb_session_secret = process.env.MONGODB_SESSION_SECRET;
 
 const node_session_secret = process.env.NODE_SESSION_SECRET;
 
-const { database } = include("databaseConnection");
+//const { database } = include("databaseConnection");
+const { database } = require("./databaseConnection");
 const userCollection = database.db(mongodb_user_database).collection("users");
 
 app.set("view engine", "ejs"); // Optional, but using res.send for simplicity as per your example
@@ -92,6 +93,18 @@ app.get("/signup", (req, res) => {
             <button>Submit</button>
         </form>
     `);
+});
+
+// 3. Login Page (GET)
+app.get("/login", (req, res) => {
+  res.send(`
+    <h2>Login</h2>
+    <form action="/login" method="post">
+        <input name="email" type="email" placeholder="Email"><br>
+        <input name="password" type="password" placeholder="Password" autocomplete="current-password"><br>
+        <button>Submit</button>
+    </form>
+  `);
 });
 
 // 2. Signup (POST)

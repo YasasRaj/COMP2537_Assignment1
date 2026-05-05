@@ -37,9 +37,9 @@ const encodedPassword = encodeURIComponent(mongodb_password);
 const mongoStore = MongoStore.create({
   mongoUrl: `mongodb+srv://${mongodb_user}:${encodedPassword}@${mongodb_host}/${mongodb_session_database}?retryWrites=true&w=majority`,
   collectionName: "sessions",
-  crypto: {
-    secret: mongodb_session_secret,
-  },
+  //   crypto: {
+  //     secret: mongodb_session_secret,
+  //   },
 });
 
 app.use(

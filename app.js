@@ -12,6 +12,7 @@ const Joi = require("joi");
 const mongoSanitize = require("express-mongo-sanitize");
 
 const app = express();
+app.set("trust proxy", 1); // Add this line!
 const saltRounds = 12;
 const PORT = process.env.PORT || 3000;
 
@@ -53,7 +54,11 @@ app.use(
     store: mongoStore,
     saveUninitialized: false,
     resave: false, // Changed to false for stability with crypto
-    cookie: { maxAge: expireTime },
+    cookie: {
+      secure: false, // Ensure this is false unless you've set up full SSL
+      httpOnly: true,
+      maxAge: expireTime,
+    },
   }),
 );
 

@@ -1,0 +1,9 @@
+<h2>Log In</h2>
+<form action="/loggingin" method="post">
+    <input name="username" type="text" placeholder="username"><br>
+    <input name="password" type="password" placeholder="password"><br>
+    <button>Submit</button>
+</form>
+<% if (typeof error !== 'undefined') { %>
+    <p style="color: red;"><%= error %></p>
+<% } %>

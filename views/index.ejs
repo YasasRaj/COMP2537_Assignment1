@@ -1,0 +1,9 @@
+<h1>Home</h1>
+<% if (!authenticated) { %>
+    <button onclick="location.href='/createUser'">Sign Up</button>
+    <button onclick="location.href='/login'">Log In</button>
+<% } else { %>
+    <p>Hello, <%= username %>!</p>
+    <button onclick="location.href='/members'">Go to Members Area</button>
+    <button onclick="location.href='/logout'">Sign Out</button>
+<% } %>

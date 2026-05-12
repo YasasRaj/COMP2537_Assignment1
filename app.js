@@ -56,136 +56,214 @@ app.use(
   }),
 );
 
+//Middleware
+
+app.use((req, res, next) => {
+  // Instead of the whole 'req', just pass the session or user status
+  res.locals.authenticated = req.session.authenticated;
+  res.locals.userType = req.session.user_type;
+  res.locals.currentPath = req.path;
+  next();
+});
+
+function isAuthenticated(req, res, next) {
+  if (req.session.authenticated) {
+    return next();
+  }
+  res.redirect("/login");
+}
+
+function isAdmin(req, res, next) {
+  if (req.session.user_type === "admin") {
+    return next();
+  }
+  // Render your custom 403 error page
+  res.status(403).render("errorMessage", {
+    statusCode: 403,
+    statusText: "Forbidden",
+    error: "Admin access only.",
+  });
+}
 // --- ROUTES ---
 
 // 1. Home Page
 app.get("/", (req, res) => {
-  if (!req.session.authenticated) {
-    res.send(`
-            <h1>Welcome</h1>
-            <a href="/signup"><button>Sign Up</button></a>
-            <a href="/login"><button>Log In</button></a>
-        `);
-  } else {
-    res.send(`
-            <h1>Hello, ${req.session.name}!</h1>
-            <a href="/members"><button>Go to Members Area</button></a>
-            <a href="/logout"><button>Logout</button></a>
-        `);
-  }
+  res.render("index", {
+    authenticated: req.session.authenticated,
+    name: req.session.name,
+  });
 });
 
 // 2. Signup Page (GET)
 app.get("/signup", (req, res) => {
-  res.send(`
-        <h2>Create Account</h2>
-        <form action="/signup" method="post">
-            <input name="name" type="text" placeholder="Name"><br>
-            <input name="email" type="email" placeholder="Email"><br>
-            <input name="password" type="password" placeholder="Password"><br>
-            <button>Submit</button>
-        </form>
-    `);
+  res.render("signup");
 });
 
 // 3. Login Page (GET)
 app.get("/login", (req, res) => {
-  res.send(`
-    <h2>Login</h2>
-    <form action="/login" method="post">
-        <input name="email" type="email" placeholder="Email"><br>
-        <input name="password" type="password" placeholder="Password" autocomplete="current-password"><br>
-        <button>Submit</button>
-    </form>
-  `);
+  res.render("login");
 });
 
 // 4. Signup (POST)
 app.post("/signup", async (req, res) => {
   const { name, email, password } = req.body;
-
+  // ... (Your Joi validation logic here) ...
   const schema = Joi.object({
     name: Joi.string().max(20).required(),
+
     email: Joi.string().email().required(),
+
     password: Joi.string().max(20).required(),
   });
 
   const validationResult = schema.validate({ name, email, password });
+
+  // If Joi finds an issue, re-render the signup page
   if (validationResult.error) {
-    res.send(
-      `${validationResult.error.details[0].message}. <br><a href="/signup">Try again</a>`,
-    );
-    return;
+    return res.render("signup", {
+      error: validationResult.error.details[0].message,
+    });
   }
 
+  const type = "user";
+
   const hashedPassword = await bcrypt.hash(password, saltRounds);
-  await userCollection.insertOne({ name, email, password: hashedPassword });
+  await userCollection.insertOne({
+    name,
+    email,
+    password: hashedPassword,
+    type: type,
+  });
 
   req.session.authenticated = true;
   req.session.name = name;
-
+  req.session.type = type;
   res.redirect("/members");
 });
 
 // 5. Login (POST)
 app.post("/login", async (req, res) => {
   const { email, password } = req.body;
-
+  // ... (Your Joi validation logic here) ...
   const schema = Joi.object({
     email: Joi.string().email().required(),
+
     password: Joi.string().max(20).required(),
   });
 
   const validationResult = schema.validate({ email, password });
+
+  // If Joi finds an issue, re-render the login page
   if (validationResult.error) {
-    res.redirect("/login");
-    return;
+    return res.render("login", {
+      error: validationResult.error.details[0].message,
+    });
   }
 
   const user = await userCollection.findOne({ email: email });
-
   if (user && (await bcrypt.compare(password, user.password))) {
     req.session.authenticated = true;
     req.session.name = user.name;
-    req.session.email = user.email;
-
+    req.session.user_type = user.type;
     res.redirect("/members");
   } else {
-    res.send(
-      "Invalid email/password combination. <br><a href='/login'>Try again</a>",
-    );
+    return res.render("login", {
+      error: "Invalid email/password. Try again",
+    });
+    res.send();
   }
 });
 
 // 6. Members Only Page
-app.get("/members", (req, res) => {
-  if (!req.session.authenticated) {
-    res.redirect("/");
-    return;
-  }
-
+app.get("/members", isAuthenticated, (req, res) => {
+  // Pass the full array to the template
   const images = ["fluffy.gif", "socks.gif", "catjam-jam.gif"];
-  const randomIndex = Math.floor(Math.random() * images.length);
-  const selectedImage = images[randomIndex];
 
-  res.send(`
-        <h1>Hello, ${req.session.name}.</h1>
-        <img src="/${selectedImage}" style="width:300px;"><br>
-        <a href="/logout"><button>Sign out</button></a>
-    `);
+  res.render("members", {
+    name: req.session.name,
+    images: images, // Changed from 'image' to 'images'
+  });
 });
 
-// 7. Logout
+//7. Admin
+app.get("/admin", isAuthenticated, isAdmin, async (req, res) => {
+  try {
+    // 3. Fetch all users from MongoDB (assuming 'userCollection' is your collection variable)
+    const users = await userCollection
+      .find()
+      .project({ name: 1, type: 1, _id: 1 })
+      .toArray();
+
+    res.render("admin", {
+      users: users,
+      currentUserName: req.session.name,
+    });
+  } catch (err) {
+    res.status(500).send("Error fetching users from database.");
+  }
+});
+
+//8. Promote
+app.get("/promote", async (req, res) => {
+  if (req.session.user_type !== "admin") {
+    return res.status(403).send("Unauthorized");
+  }
+
+  // Validate the query parameter
+  const schema = Joi.string().required();
+  const validationResult = schema.validate(req.query.name);
+
+  if (validationResult.error) {
+    return res.redirect("/admin");
+  }
+
+  const userName = req.query.name;
+  await userCollection.updateOne(
+    { name: userName },
+    { $set: { type: "admin" } },
+  );
+
+  res.redirect("/admin");
+});
+
+//9. Demote
+app.get("/demote", async (req, res) => {
+  if (req.session.user_type !== "admin") {
+    return res.status(403).send("Unauthorized");
+  }
+
+  // Validate the query parameter
+  const schema = Joi.string().required();
+  const validationResult = schema.validate(req.query.name);
+
+  if (validationResult.error) {
+    return res.redirect("/admin");
+  }
+
+  const userName = req.query.name;
+  await userCollection.updateOne(
+    { name: userName },
+    { $set: { type: "user" } },
+  );
+
+  res.redirect("/admin");
+});
+
+// 10. Logout
+
 app.get("/logout", (req, res) => {
   req.session.destroy();
+
   res.redirect("/");
 });
 
 app.use(express.static(__dirname + "/public"));
 
-// 8. 404 Page
+// 11. 404 Page
 app.use((req, res) => {
-  res.status(404).send("Page not found - 404");
+  res
+    .status(404)
+    .render("errorMessage", { statusCode: "404", error: "Page not found" });
 });
 
 app.listen(PORT, () => {

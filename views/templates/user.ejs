@@ -1,0 +1,15 @@
+<tr>
+    <td class="ps-4 fw-bold"><%= user.name %></td>
+    <td>
+        <span class="badge <%= user.type === 'admin' ? 'bg-primary' : 'bg-secondary' %>">
+            <%= user.type %>
+        </span>
+    </td>
+    <td class="text-end pe-4">
+        <% if (user.type === 'admin') { %>
+            <a href="/demote?name=<%= user.name %>" class="btn btn-sm btn-outline-danger">Demote</a>
+        <% } else { %>
+            <a href="/promote?name=<%= user.name %>" class="btn btn-sm btn-outline-primary">Promote</a>
+        <% } %>
+    </td>
+</tr>

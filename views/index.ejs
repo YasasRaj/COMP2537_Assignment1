@@ -1,9 +1,36 @@
-<h1>Home</h1>
-<% if (!authenticated) { %>
-    <button onclick="location.href='/createUser'">Sign Up</button>
-    <button onclick="location.href='/login'">Log In</button>
-<% } else { %>
-    <p>Hello, <%= username %>!</p>
-    <button onclick="location.href='/members'">Go to Members Area</button>
-    <button onclick="location.href='/logout'">Sign Out</button>
-<% } %>
+<%- include('templates/header', { styleSheets: [] }) %>
+
+<div class="row justify-content-center align-items-center" style="min-height: 60vh;">
+    <div class="col-md-8 text-center">
+        
+        <% if (!authenticated) { %>
+            <!-- Welcome section for Guest -->
+            <h1 class="display-4 fw-bold text-primary mb-4">Welcome</h1>
+            <p class="lead text-muted mb-5">Please sign up or log in to access the members-only cat gallery and admin dashboard.</p>
+            
+            <div class="d-grid gap-3 d-sm-flex justify-content-sm-center">
+                <a href="/signup" class="btn btn-primary btn-lg px-5">Sign Up</a>
+                <a href="/login" class="btn btn-outline-primary btn-lg px-5">Log In</a>
+            </div>
+
+        <% } else { %>
+            <!-- Personalized section for Logged In User -->
+            <div class="card shadow-sm border-0 py-5 px-4 bg-light">
+                <h1 class="display-5 fw-bold text-primary mb-3">Hello, <%= name %>!</h1>
+                <p class="fs-5 text-muted mb-4">You are currently logged in. Where would you like to go next?</p>
+                
+                <div class="d-grid gap-2 d-sm-flex justify-content-sm-center">
+                    <a href="/members" class="btn btn-primary btn-lg px-4">
+                        <i class="bi me-2"></i>Go to Members Area
+                    </a>
+                    <a href="/logout" class="btn btn-outline-danger btn-lg px-4">
+                        Logout
+                    </a>
+                </div>
+            </div>
+        <% } %>
+
+    </div>
+</div>
+
+<%- include('templates/footer', { scripts: [] }) %>

@@ -1,8 +1,23 @@
-<h2>Hello, <%= user %></h2>
-<p>Welcome to the members-only area!</p>
-<img
-  src="/<%= image %>"
-  alt="Random Cat"
-  style="width: 300px; display: block; margin: 20px 0"
-/>
-<button onclick="location.href = '/logout'">Sign Out</button>
+<%- include('templates/header', { styleSheets: [] }) %>
+
+<div class="text-center mb-5">
+    <h1 class="display-4 text-primary">Hello, <%= name %>.</h1>
+    <!-- <p class="lead">Check out these members-only cats!</p> -->
+</div>
+
+<!-- Bootstrap Responsive Grid -->
+<div class="row g-4 justify-content-center">
+    <% images.forEach(function(img) { %>
+        <div class="col-12 col-md-4">
+            <div class="card border-0 shadow-sm">
+                <img src="/<%= img %>" class="card-img-top rounded img-fluid" alt="Member Cat">
+            </div>
+        </div>
+    <% }); %>
+</div>
+
+<div class="text-center mt-5">
+    <a href="/logout" class="btn btn-outline-primary btn-lg">Sign out</a>
+</div>
+
+<%- include('templates/footer', { scripts: [] }) %>

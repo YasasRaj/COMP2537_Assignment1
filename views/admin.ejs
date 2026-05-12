@@ -1,0 +1,27 @@
+<%- include('templates/header', { styleSheets: [] }) %>
+
+<div class="mb-4">
+    <h1 class="text-primary">Admin Dashboard</h1>
+    <p class="text-muted">Manage user permissions and roles.</p>
+</div>
+
+<div class="card shadow-sm border-0">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="bg-light text-primary">
+                <tr>
+                    <th class="ps-4">Name</th>
+                    <th>Type</th>
+                    <th class="text-end pe-4">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% users.forEach(user => { %>
+                    <%- include('templates/user', {user: user}) %>
+                <% }) %>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<%- include('templates/footer', { scripts: [] }) %>
